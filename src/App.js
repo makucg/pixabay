@@ -6,24 +6,48 @@ function App() {
 
   const [busqueda, guardarBusqueda] = useState('');
   const [imagenes, guardarImagenes] = useState([]);
+  const [paginaActual, guardarPaginaActual] = useState(1);
+  const [totalPaginas, guargarTotalPaginas] = useState(1);
 
   useEffect(() => {
     const consultarAPI = async () => {
       if(busqueda === '') return;
 
-      const imagenesPorPagina = 30;
+      const imagenesPorPagina = 20;
       const key = '21831674-c218983da27969a6591d30035';
-      const url = `https://pixabay.com/api/?key=${key}&q=${busqueda}&per_page=${imagenesPorPagina}`;
+      const url = `https://pixabay.com/api/?key=${key}&q=${busqueda}&per_page=${imagenesPorPagina}&lang=es&page=${paginaActual}`;
 
       const respuesta = await fetch(url);
       const resultado = await respuesta.json();
-      console.log(resultado);
       guardarImagenes(resultado.hits);
 
+      //total paginas
+      const calcularTotalPaginas = Math.ceil(resultado.totalHits / imagenesPorPagina);
+      guargarTotalPaginas(calcularTotalPaginas);
+
+      const album = document.querySelector('.album');
+      album.scrollIntoView({behavior: 'smooth'});
     }
     consultarAPI();
     
-  },[busqueda]);
+  },[busqueda, paginaActual]);
+
+  const paginaAnterior = () => {
+    const nuevaPaginaActual = paginaActual - 1;
+    
+    if(nuevaPaginaActual === 0) return;
+
+    guardarPaginaActual(nuevaPaginaActual);
+  }
+
+  const paginaSiguiente= () => {
+    const nuevaPaginaActual = paginaActual + 1;
+    
+    if(nuevaPaginaActual > totalPaginas) return;
+
+    guardarPaginaActual(nuevaPaginaActual);
+  }
+  
 
   return (
     <div className="container">
@@ -33,8 +57,27 @@ function App() {
           guardarBusqueda={guardarBusqueda}
         />
       </div>
-      <div className="row justify-content-center">
-        <ListadoImagenes imagenes={imagenes} />
+      <div className="album py-5 bg-light">
+        <div className="container">
+          <ListadoImagenes imagenes={imagenes} />
+        </div>
+        <div className="col text-center mt-2">
+          {(paginaActual === 1) ? null : (
+            <button
+              type="button"
+              className="bbtn btn-info mr-1"
+              onClick={paginaAnterior}
+            >&laquo; Anterior</button>
+          )}
+
+          {(paginaActual === totalPaginas) ? null : (
+            <button
+              type="button"
+              className="bbtn btn-info ml-1"
+              onClick={paginaSiguiente}
+            >Siguiente &raquo;</button>
+          )}
+        </div>
       </div>
     </div>
   );
